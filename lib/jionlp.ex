@@ -253,6 +253,49 @@ defmodule JioNLP do
     end
   end
 
+  @doc """
+  Extract every time expression from a free-text string.
+
+  Each result is a `%JioNLP.TimeEntity{}` with byte-offset `offset`,
+  the matched substring `text`, and (by default) the same
+  `JioNLP.TimeInfo` you'd get from `parse_time/1` on that substring
+  placed in `detail`.
+
+  ## Options
+
+    * `:reference_time` — ISO string `"YYYY-MM-DDTHH:MM:SS"` to anchor
+      relative expressions (defaults to current local time)
+    * `:with_parsing` — `false` returns entities without `detail`
+      (cheaper when you only need spans); default `true`
+    * `:ret_all` — `true` keeps overlapping matches (default `false`)
+
+  ## Example
+
+      iex> JioNLP.extract_time("会议从2024年6月10日开始,持续三天。")
+      [
+        %JioNLP.TimeEntity{text: "2024年6月10日", offset: {3, 15}, time_type: "time_point", detail: %JioNLP.TimeInfo{...}},
+        %JioNLP.TimeEntity{text: "三天", offset: {19, 23}, time_type: "time_delta", detail: ...}
+      ]
+  """
+  @spec extract_time(String.t(), keyword) :: [JioNLP.TimeEntity.t()]
+  def extract_time(text, opts \\ []) do
+    ref = Keyword.get(opts, :reference_time, "")
+    with_parsing = Keyword.get(opts, :with_parsing, true)
+    ret_all = Keyword.get(opts, :ret_all, false)
+    Native.extract_time(text, ref, with_parsing, ret_all)
+  end
+
+  @doc """
+  Normalize a free-text time-period or time-delta expression to a
+  `JioNLP.TimeDelta`. Returns `nil` if the text doesn't describe a
+  duration.
+
+      iex> JioNLP.normalize_time_period("每三天")
+      %JioNLP.TimeDelta{day: %JioNLP.DeltaValue{num: 3, ...}, ...}
+  """
+  @spec normalize_time_period(String.t()) :: JioNLP.TimeDelta.t() | nil
+  def normalize_time_period(text), do: Native.normalize_time_period(text)
+
   # ─────────────────────────── simhash ──────────────────────────────────────
 
   @doc "Compute a 64-bit SimHash of `text` (default char bigrams)."

@@ -237,6 +237,23 @@ defmodule JioNLP.TimeInfo do
         }
 end
 
+defmodule JioNLP.TimeEntity do
+  @moduledoc """
+  A time expression found by `JioNLP.extract_time/2,3`. `offset` is a
+  byte range into the original string. `detail` is the `parse_time`
+  result for that span, or `nil` when `with_parsing: false` was passed.
+  """
+  @enforce_keys [:text, :offset, :time_type]
+  defstruct [:text, :offset, :time_type, :detail]
+
+  @type t :: %__MODULE__{
+          text: String.t(),
+          offset: {non_neg_integer, non_neg_integer},
+          time_type: String.t(),
+          detail: JioNLP.TimeInfo.t() | nil
+        }
+end
+
 defmodule JioNLP.KeyPhrase do
   @moduledoc "A candidate keyphrase returned by `JioNLP.extract_keyphrase/2,3`."
   @enforce_keys [:phrase, :weight]
@@ -390,6 +407,10 @@ defmodule JioNLP.Native do
   # gadget/time_parser
   def parse_time(_text), do: :erlang.nif_error(:nif_not_loaded)
   def parse_time_with_ref(_text, _ref_iso), do: :erlang.nif_error(:nif_not_loaded)
+  def extract_time(_text, _ref_iso, _with_parsing, _ret_all),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def normalize_time_period(_text), do: :erlang.nif_error(:nif_not_loaded)
 
   # algorithm/simhash
   def simhash(_text), do: :erlang.nif_error(:nif_not_loaded)
