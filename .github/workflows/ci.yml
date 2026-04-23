@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  elixir:
+    name: mix test (OTP ${{ matrix.otp }} / Elixir ${{ matrix.elixir }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        otp: ["26", "27"]
+        elixir: ["1.16", "1.17"]
+        exclude:
+          - otp: "27"
+            elixir: "1.16"
+    steps:
+      - name: Checkout jionlp_ex
+        uses: actions/checkout@v5
+        with:
+          path: jionlp_ex
+
+      # `mix.exs` references `../jionlp_rs/...` for the Rust fallback build
+      # and for `scripts/sync_dictionary.sh`. Check out the Rust sibling next
+      # to jionlp_ex so the relative paths resolve.
+      - name: Checkout jionlp_rs sibling
+        uses: actions/checkout@v5
+        with:
+          repository: Psli/jionlp_rs
+          path: jionlp_rs
+
+      - name: Install Rust (for JIONLP_BUILD=1 fallback)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            jionlp_ex/deps
+            jionlp_ex/_build
+          key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('jionlp_ex/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-
+
+      - name: Sync dict from jionlp_rs
+        working-directory: jionlp_ex
+        run: ./scripts/sync_dictionary.sh
+
+      - name: Fetch deps
+        working-directory: jionlp_ex
+        run: mix deps.get
+
+      - name: Compile (force rebuild NIF from source)
+        working-directory: jionlp_ex
+        env:
+          JIONLP_BUILD: "1"
+        run: mix compile --warnings-as-errors
+
+      - name: Test
+        working-directory: jionlp_ex
+        env:
+          JIONLP_BUILD: "1"
+        run: mix test

@@ -1,0 +1,28 @@
+/_build/
+/cover/
+/deps/
+/doc/
+/.fetch
+erl_crash.dump
+*.ez
+jionlp_ex-*.tar
+/native/*/target/
+
+# Compiled NIF artifacts (rebuilt locally when JIONLP_BUILD=1, downloaded
+# by rustler_precompiled otherwise).
+/priv/native/
+
+# Hex package build scratch
+/contents.tar.gz
+
+# Language server / IDE
+/.elixir_ls/
+/.idea/
+/.vscode/
+.DS_Store
+
+# `priv/data` is a build-time copy of `../jionlp_rs/crates/jionlp-core/
+# data` (run `./scripts/sync_dictionary.sh` or `mix jionlp.sync_dict` to
+# regenerate). The Rust side is the single source of truth, so the
+# Elixir copy is git-ignored.
+/priv/data/
