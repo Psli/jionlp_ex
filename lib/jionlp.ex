@@ -317,10 +317,27 @@ defmodule JioNLP do
 
   @doc """
   Extractive summary: return the `top_k` highest-scoring sentences of
-  `text` (ranked by bigram IDF), in original document order.
+  `text` in original document order.
+
+  Ranking mirrors Python JioNLP: TF-IDF over char bigrams + LDA
+  topic-prominence (when the full data bundle is installed) + length
+  penalty (×0.7 if <15 or >70 CJK chars) + lead-3 position bonus (×1.2
+  for the first three sentences). For MMR diversity on top of this,
+  call `extract_summary_mmr/3`.
   """
   @spec extract_summary(String.t(), pos_integer) :: [JioNLP.SummarySentence.t()]
   def extract_summary(text, top_k \\ 3), do: Native.extract_summary(text, top_k)
+
+  @doc """
+  Extractive summary capped at `max_chars` characters. Mirrors Python's
+  `extract_summary(..., summary_length=200)`: picks sentences in
+  descending weight order and keeps adding until the next one would
+  blow the budget. Always returns at least the single highest-scoring
+  sentence even if it alone exceeds `max_chars`.
+  """
+  @spec extract_summary_by_length(String.t(), pos_integer) :: [JioNLP.SummarySentence.t()]
+  def extract_summary_by_length(text, max_chars \\ 200),
+    do: Native.extract_summary_by_length(text, max_chars)
 
   # ─────────────────────────── textaug ──────────────────────────────────────
 

@@ -409,6 +409,7 @@ defmodule JioNLP.Native do
 
   # algorithm/summary
   def extract_summary(_text, _top_k), do: :erlang.nif_error(:nif_not_loaded)
+  def extract_summary_by_length(_text, _max_chars), do: :erlang.nif_error(:nif_not_loaded)
 
   # textaug
   def swap_char_position(_text, _n, _swap_ratio, _seed, _scale),
